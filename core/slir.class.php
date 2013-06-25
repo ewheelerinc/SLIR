@@ -1012,7 +1012,7 @@ class SLIR
    */
   private function renderedCacheFilename()
   {
-    return '/' . $this->getRendered()->getHash();
+    return '/' . $this->hashdir($this->getRendered()->getHash());
   }
 
   /**
@@ -1036,7 +1036,18 @@ class SLIR
    */
   private function requestCacheFilename()
   {
-    return '/' . hash('md4', $this->getHTTPHost() . '/' . $this->requestURI() . '/' . SLIRConfig::$defaultCropper);
+    return '/' . $this->hashdir(hash('md4', $this->getHTTPHost() . '/' . $this->requestURI() . '/' . SLIRConfig::$defaultCropper));
+  }
+
+
+  /**
+   * @since git 2013-06-24
+   * @return string
+   */
+  private function hashdir($h)
+  {
+    $dir = substr($h, 0, SLIRConfig::$cacheDirHashWidth);
+    return "/$dir/$h";
   }
 
   /**
@@ -1268,8 +1279,8 @@ class SLIR
     }
 
     $this->initializeDirectory(SLIRConfig::$pathToCacheDir);
-    $this->initializeDirectory(SLIRConfig::$pathToCacheDir . '/rendered', false);
-    $this->initializeDirectory(SLIRConfig::$pathToCacheDir . '/request', false);
+    $this->initializeDirectory(SLIRConfig::$pathToCacheDir . '/rendered', false, true);
+    $this->initializeDirectory(SLIRConfig::$pathToCacheDir . '/request', false, true);
 
     $this->isCacheInitialized = true;
     return true;
@@ -1317,7 +1328,7 @@ class SLIR
    * @param boolean $verifyReadWriteability
    * @return boolean
    */
-  private function initializeDirectory($path, $verifyReadWriteability = true, $test = false)
+  private function initializeDirectory($path, $verifyReadWriteability = true, $test = false, $create_hashdir = false)
   {
     if (!file_exists($path)) {
       if (!@mkdir($path, 0755, true)) {
@@ -1325,6 +1336,11 @@ class SLIR
         throw new RuntimeException("Directory ($path) does not exist and was unable to be created. Please create the directory.");
       }
     }
+
+    // Create the hash directories if the first one doesn't exist.
+    if ($create_hashdir && !file_exists("$path/".sprintf("%0".SLIRConfig::$cacheDirHashWidth."x", 0)))
+      for ($i = 0; $i < 16*SLIRConfig::$cacheDirHashWidth; $i++)
+        mkdir("$path/" . sprintf("%0".SLIRConfig::$cacheDirHashWidth."x", $i), 0755, true);
 
     if (!$verifyReadWriteability) {
       return true;

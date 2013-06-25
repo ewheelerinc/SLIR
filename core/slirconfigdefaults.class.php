@@ -144,6 +144,13 @@ class SLIRConfigDefaults
   public static $pathToCacheDir = null;
 
   /**
+   * The number of hex charectars to slirp off the front of the md4 hash and use as a hash tree to reduce the per-directory file count.  The default is 2, so 256 (00-ff) directories will be created.  A value of 3 would create 4096 directories (000-fff).  If you have 81920 images, then you would have (approximately) 320 files per directory with a default value of 2.
+   *
+   * @var string
+   */
+  public static $cacheDirHashWidth = 2;
+
+  /**
    * Path to the error log file. Needs to be writable by the web server. Ideally, this should be located outside of the web tree.
    *
    * If not specified, defaults to 'slir-error-log' in the directory SLIR is located.
